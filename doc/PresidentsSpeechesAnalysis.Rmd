@@ -1,0 +1,24 @@
+---
+title: "R Notebook"
+author: "Ziwei Meng"
+date: "2017-01-31"
+output: html_notebook
+---
+# Set working environment
+```{r}
+setwd("/Users/Zoe/Documents/Spring2017/G5243/MyPrjs/Spr2017-Proj1-ZiweiMeng/doc/")
+library(tm)
+```
+# Read all texts into a list
+```{r warning=FALSE}
+folder.path <- "../data/fulltext/"
+filenames <- list.files(path = folder.path, pattern = "*.txt")
+fnames <- paste(folder.path,filenames,sep = "")
+files <- lapply(fnames,readLines)
+```
+<!-- notice that the last three speeches of Trump are of different format(list of sentences instead of a whole text), we may deal with it later. -->
+# Transform list of texts into corpus and clean it
+```{r}
+docs <- Corpus(VectorSource(files))
+```
+
