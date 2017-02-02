@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+author: "Ziwei Meng"
+date: "2017-01-31"
+output: html_notebook
+---
+# Set working environment
+```{r}
+setwd("/Users/Zoe/Documents/Spring2017/G5243/MyPrjs/Spr2017-Proj1-ZiweiMeng/doc/")
+library(tm)
+```
+# Read all texts into a list
+```{r warning=FALSE}
+folder.path <- "../data/fulltext/"
+filenames <- list.files(path = folder.path, pattern = "*.txt")
+fnames <- paste(folder.path,filenames,sep = "")
+files <- lapply(fnames,readLines)
+```
+<!-- notice that the last three speeches of Trump are of different format(list of sentences instead of a whole text), we may deal with it later. -->
+# Transform list of texts into corpus and clean it
+```{r}
+docs <- Corpus(VectorSource(files))
+#meta(docs,"id") <- filenames
+
+docs <- tm_map(docs,content_transformer(tolower))
+#remove potentially problematic symbols
+toSpace <- content_transformer(function(x, pattern) { return (gsub(pattern," ", x))})
+docs <- tm_map(docs, toSpace, "-")
+docs <- tm_map(docs, toSpace, "'")
+docs <- tm_map(docs, toSpace, "`")
+docs <- tm_map(docs, toSpace, "•")
+docs <- tm_map(docs, toSpace, "\"")
+
+#remove punctuation
+docs <- tm_map(docs, removePunctuation)
+#strip digits
+docs <- tm_map(docs,removeNumbers)
+#remove stopwords
+docs <- tm_map(docs, removeWords, stopwords("english"))
+#remove whitespace
+docs <- tm_map(docs, stripWhitespace)
+#stem words
+#docs <- tm_map(docs,stemDocument)
+#there is something wrong with my local rstudio so I did the computation on a vm and load it here.
+load("../output/stemDocs.RData")
+```
+# Calculate word frequency
+```{r}
+#Create document-term matrix
+dtm <- DocumentTermMatrix(docs)
+#convert rownames to filenames
+rownames(dtm) <- filenames
+#collapse matrix by summing over columns
+freg <- colSums(as.matrix(dtm))
+#length should be total number of terms
+print(paste0("Total number of terms are: ",as.character(length(freg))))
+#create sort order (descending)
+ord <- order(freg,decreasing = TRUE)
+#List all terms in decreasing order of freg and write to disk
+freg[ord][1:10]
+write.csv(freg[ord],"../output/word_freq.csv")
+```
+# Basic topic model
+First run a LDA model by Gibbling sampling, and save the resules.
+```{r message=FALSE}
+library(topicmodels)
+
+#Set parameters for Gibbs sampling
+burnin <- 4000
+iter <- 2000
+thin <- 500
+seed <- list(2003,5,63,100001,765)
+nstart <- 5
+best <- TRUE
+
+#Number of topics
+k <- 10
+
+#Run LDA using Gibbs sampling
+ldaOut <- LDA(dtm,k,method = "Gibbs", control = list(nstart=nstart,seed=seed,best=best,burnin=burnin,iter=iter,thin=thin))
+#save(ldaOut,file = "../output/lda10topics.RData")
+
+#Write out results
+#docs to topics
+ldaOut.topics <- as.matrix(topics(ldaOut))
+write.csv(ldaOut.topics,file = paste0("../output/","LDAGibbs",k,"DocsToTopics.csv"))
+#top 6 terms in each topic
+ldaOut.terms <- as.matrix(terms(ldaOut,6))
+write.csv(ldaOut.terms,file = paste0("../output/","LDAGibbs",k,"TopicsToTerms.csv"))
+#probabilities associated with each topic assignment
+topicProbabilities <- as.data.frame(ldaOut@gamma)
+write.csv(topicProbabilities,file = paste0("../output/","LDAGibbs",k,"TopicProbabilities.csv"))
+#Find relative importance of top 2 topics
+topic1ToTopic2 <- lapply(1:nrow(dtm),function(x)
+  sort(topicProbabilities[x,])[k]/sort(topicProbabilities[x,])[k-1])
+#Find relative importance of second and third most important topics
+topic2ToTopic3 <- lapply(1:nrow(dtm),function(x)
+  sort(topicProbabilities[x,])[k-1]/sort(topicProbabilities[x,])[k-2])
+#write to file
+write.csv(topic1ToTopic2,file = paste0("../output/","LDAGibbs",k,"Topic1ToTopic2.csv"))
+write.csv(topic2ToTopic3,file = paste0("../output/","LDAGibbs",k,"Topic2ToTopic3.csv"))
+```
+
+
+
