@@ -177,6 +177,7 @@ p <- ggplot() +
   geom_line(data = word.reflect%>%select(Date,Economy), aes(x = Date, y = Economy, color = "Economy")) +
   geom_line(data = word.reflect%>%select(Date,Unemployment), aes(x = Date, y = Unemployment, color = "Unemployment")) +
   geom_line(data = word.reflect%>%select(Date,GDPperc), aes(x = Date, y = GDPperc, color = "GDPgrowth")) +
+  ggtitle("Trends for Word Frequencies and Economic Indexes") +
   xlab('') +
   ylab('Temporal Trends')
 p
