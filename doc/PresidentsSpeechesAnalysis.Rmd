@@ -40,16 +40,20 @@ Crude answers are, Republicans call for jobs while Democrats call for money, a n
 Now let me navigate you through the data, clarify assumptions, and see how we end up there.
 
 
-## How does Republican focus differently from Democratic
+# How does Republican focus differently from Democratic
+## A baseline
 To set up a baseline, I simply calculated the word frequency and see there are some popular words among all the presidents, like "American", "people" and "nation". Here we already smell the style of presidential speech.
 ```{r echo=FALSE}
 library(ggplot2)
 p <- ggplot(subset(word_freq,freq>765),aes(word,freq))
-p <- p + geom_bar(stat = "identity")
+p <- p + geom_bar(stat = "identity") +
+  ggtitle("US Presidents's favourite Words")
 p <- p + theme(axis.text.x = element_text(angle = 45,hjust = 1))
 p
 ```
-</br>
+
+## With Trump
+
 Since we focus on comparison between Republican and Democratic, a few speeches associated with Federalist or Whig are omitted. We group these documents into two corpus. Our basic assumotions are, if a word appears many times in a specific document, then it features that document, but if this word also appears many times in most documents, then it is more likely a general word, and hence we shrink it's importance to that specific document. And then we simply use mean importance as the word's weight to a group.
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(wordcloud)
@@ -81,6 +85,8 @@ par(mfrow=c(1,2), mar = c(0, 0, 3, 0))
               random.color=FALSE,
               colors=brewer.pal(9,"Blues"))
 ```
+
+## Without Trump
 Clearly presidents from both parties talk a lot about America, and we already see some differences between these two groups. Worker, immigrant and illegal in red, revenue, tariff and trade in blue. I just notice that there are some specific names in red, like Hillary, Obama and Trump, and somehow I suspect Trump contributes a lot in that. So I leave out Trump for the time being and see what happens.
 ```{r echo=FALSE}
 
@@ -111,6 +117,8 @@ par(mfrow=c(1,2), mar = c(0, 0, 3, 0))
 ```
 </br>
 Boom! Those names go away with Trump, and some new words like children and freedom come in. You would have to admit that Trump has a significant influence on the word map for the whole party, his absence almost reshapes the landscape.</br>
+
+## A contrast.
 To make the comparison even sharper, I literally calculated the difference between those words weights, and let's see which words are drawn higher attention from which party.
 ```{r echo=FALSE}
 set.seed(49)
@@ -151,7 +159,7 @@ speech.list$President[order(as.matrix(dtm[,'job']),decreasing = TRUE)[1:5]]
 ```
 3 of first 5 are Republicans.
 
-## How does words-choosing reflect national economic environment
+# How does words-choosing reflect national economic environment
 Now let's introduce some other data to make things more interesting.</br>
 I assume that presidents base their speeches on some realities, maybe they promise a lot about jobs in the nomination when unemployment is high, or brag more about jobs they have created at farewell when GDP growth does become higher. Or they just follow what they believe to be important and never take a look at the economy index the night before an address. </br>
 It is mysterious how they knit realities into their speeches and at what situation. Hence I downloaded GDP growth percentage per quarter and unemployment per month data from <a href="https://www.bls.gov/">U.S. Bureau of Labor Statistics</a>, compare them to the word frequency of nearest following address. </br>
@@ -175,10 +183,10 @@ p
 ```
 </br>
 From above plot it's kind of hard to identify the association between each pairs, so I divided GDP growth series into "Higher GDP growth" half and "Lower GDP growth" half, the same operation on unemployment, and make them factors.</br>
-Now we can compare word frequencies of "job" and "economy" in different levels of GDP growth or unemployment, we use ANOVA test for unequal sizes to test whether means for different levels under a factor are same. </br>
-I did exploration with different type of speeches, and only for inaugural speeches there is a significant difference(see second table). </br>
-So if one has to choose a night before his speech to go over the economic index, it would the night before nomination speech. And if last quarter's GDP growth is high, he would talk a lot about jobs.</br>
-Why would nomination be so different from inaugural and farewell? I can't say for sure, but notice that nomination happens in summer while the other two happens in winter/early spring, there might be some seasonal association attached to it.
+Now we can compare word frequencies of "job" and "economy" in different levels of GDP growth or unemployment, we use ANOVA test for unequal sizes to test whether higher and lower groups of an economic index have equal mean for a specific word. For example, if there is no association between GDP growth and frequency "job" is mentioned, then we expect in the below figure red and blue proportion roughly the same in "job" column.</br>
+I did exploration with different type of speeches, and only for inaugural speeches there is a significant difference(see second table), so I plot only this one. </br>
+So if one has to choose a night before his speech to go through the economic index, it would the night before nomination speech. And if last quarter's GDP growth is high, he would talk a lot about jobs.</br>
+Why would nomination speeches be so different from inauguration and farewell? I can't say for sure at this moment, but notice that nomination happens in summer while the other two happens in winter/early spring, there might be some seasonal association attached to it.
 ```{r message=FALSE, echo=FALSE}
 word.reflect <- speech.list%>%filter((Date>as.Date("1952-1-1"))&(Date<as.Date("2017-1-1"))&(type=="nomin"))%>%select(Date,Job,Economy)%>%inner_join(unemplyGDP)
 word.reflect$higherUnemployment <- as.factor(word.reflect$Unemployment>median(word.reflect$Unemployment))
@@ -188,7 +196,8 @@ GDP.influence <- word.reflect%>%select(Job,Economy,higherGDP,higherUnemployment)
 #GDP.influence
 GDP.influence <- as.data.frame(list(higherGDP=c(FALSE,FALSE,TRUE,TRUE),Freq=c(0.99,1.46,5.89,2.71),Word=c('Job','Economy','Job','Economy')))
 ggplot(GDP.influence, aes(Word, Freq, fill = higherGDP )) +
-  geom_bar(position = "fill",stat = "identity")
+  geom_bar(position = "fill",stat = "identity") +
+  ggtitle("Word Frequency v.s. GDP growth rate with Inaugural Speeches")
 unemployment.influence <- word.reflect%>%select(Job,Economy,higherGDP,higherUnemployment)%>%group_by(higherUnemployment)%>%summarise(meanJobFreq=mean(Job),meanEconomyFreq=mean(Economy))
 #unemployment.influence
 p_table <- as.data.frame(list(
@@ -220,7 +229,7 @@ Unfortunately, I tested this hypothesis and found no significant evidence, so I 
 <!-- # ``` -->
 
 
-## How does presidents' moods change at farewell compared to inauguration
+# How does presidents' moods change at farewell compared to inauguration
 !['source: google image'](../data/trump-vs-obama-two-types-of-men.jpg)
 </br>
 
@@ -233,13 +242,20 @@ mood_mean <- mood_type%>%group_by(type)%>%summarise(meanPositive=mean(positive))
 mood_mean$meanPositive <- round(mood_mean$meanPositive,digits = 2)
 #mood_mean
 p <- ggplot(mood_mean,aes(type,meanPositive))
-p <- p + geom_bar(stat = "identity",fill=brewer.pal(3,"Reds"))
+p <- p + geom_bar(stat = "identity",fill=brewer.pal(3,"Reds")) +ggtitle("Positive Levels at Different Types of Speeches")
 p
 mood_type$type <- as.factor(mood_type$type)
 pairwise.t.test(mood_type$positive,mood_type$type,pool.sd = TRUE,p.adjust.method = "bonf")
 ```
 On the contrary of the picture above, it seems that a president is happiest at inaugural, then at farewell, least positive at nomination.</br>
 It is actually quite understandable. Landing on your dream job is sweet, retirement after intensive career years might be a release, but an uncertain job offer with powerful competitors in future can be quite stressful.
+
+# To be continued...
+Here are some questions emerged through our analysis, for example,
+<li>Why only in inaugural speeches we find association between "job" frequency and GDP growth?</li>
+<li>Can we use annual GDP/unemployment instead of quarterly? What would happen then?</li>
+<li>Are there better metrics then mean of sentences to tag sentiment for each document?</li>
+Works are not done!To be tuned.
 
 </br>
 </br>
