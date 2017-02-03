@@ -256,7 +256,7 @@ Here are some questions emerged through our analysis, for example,
 <li>Why only in inaugural speeches we find association between "job" frequency and GDP growth?</li>
 <li>Can we use annual GDP/unemployment instead of quarterly? What would happen then?</li>
 <li>Are there better metrics then mean of sentences to tag sentiment for each document?</li>
-Works are not done!To be tuned.
+Works are not done!Stay tuned.
 
 </br>
 </br>
