@@ -153,7 +153,7 @@ speech.list$President[order(as.matrix(dtm[,'job']),decreasing = TRUE)[1:5]]
 
 ## How does words-choosing reflect national economic environment
 Now let's introduce some other data to make things more interesting.</br>
-I assume that presidents base their speeches on some realities, maybe they promise a lot about jobs in the nomination when unemployment is high, or brag more about jobs they have create at farewell when GDP growth does become higher. Or they just follow what they believe to be important and never take a look at the economy index the night before an address. </br>
+I assume that presidents base their speeches on some realities, maybe they promise a lot about jobs in the nomination when unemployment is high, or brag more about jobs they have created at farewell when GDP growth does become higher. Or they just follow what they believe to be important and never take a look at the economy index the night before an address. </br>
 It is mysterious how they knit realities into their speeches and at what situation. Hence I downloaded GDP growth percentage per quarter and unemployment per month data from <a href="https://www.bls.gov/">U.S. Bureau of Labor Statistics</a>, compare them to the word frequency of nearest following address. </br>
 We focus on speeches after 1952 since from then reliable unemployment and GDP statistics become available.
 ```{r message=FALSE, echo=FALSE}
